@@ -1,0 +1,55 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Portfolio Builder</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">AI Career Tools</a>
+            <div>
+                <a class="btn btn-outline-primary me-2" href="{% url 'home' %}">HOME</a>
+                <a class="btn btn-outline-primary me-2" href="{% url 'cover_letter' %}">Cover Letter</a>
+                <a class="btn btn-outline-success" href="{% url 'resume_generator' %}">Resume</a>
+                
+            </div>
+        </div>
+    </nav>
+<div class="container py-5">
+    <h2 class="mb-4">AI-Powered Portfolio Builder</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Generate Portfolio</button>
+    </form>
+    {% if portfolio_html %}
+        <hr>
+        <h3>Your Portfolio Preview</h3>
+        <div id="portfolioPreview" class="border p-3 mb-3 bg-light">
+            {{ portfolio_html|safe }}
+        </div>
+        <button id="downloadPortfolioPdf" class="btn btn-danger">Download as PDF</button>
+    {% endif %}
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('downloadPortfolioPdf');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            const { jsPDF } = window.jspdf;
+            const text = document.getElementById('portfolioPreview').innerText;
+            const doc = new jsPDF();
+            const lines = doc.splitTextToSize(text, 180);
+            doc.setFont('times', 'normal');
+            doc.setFontSize(12);
+            doc.text(lines, 15, 20);
+            doc.save('portfolio.pdf');
+        });
+    }
+});
+</script>
+</body>
+</html>

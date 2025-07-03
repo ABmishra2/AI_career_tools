@@ -1,0 +1,16 @@
+<div>
+    <h2>{{ name }}</h2>
+    <p><strong>Email:</strong> {{ email }}</p>
+    <p><strong>Summary:</strong> {{ summary }}</p>
+    <h4>Projects</h4>
+    <ul>
+        {% for project in projects %}
+            <li>
+                <strong>{{ project.0 }}</strong>: {{ project.1 }}
+                {% if project.2 %}
+                    <br><a href="{{ project.2 }}" target="_blank">{{ project.2 }}</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</div>

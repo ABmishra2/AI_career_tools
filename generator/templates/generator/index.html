@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+
+
+
+<html>
+<head>
+    <title>AI Cover Letter Generator</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            background: #f8fafc;
+        }
+        .fade-in {
+            opacity: 0;
+            transition: opacity 1s;
+        }
+        .fade-in.show {
+            opacity: 1;
+        }
+        .header-img {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 1rem;
+        }
+        .pdf-btn {
+            float: right;
+        }
+
+        @media (max-width: 767.98px) {
+            .header-img {
+                width: 60px;
+                height: 60px;
+            }
+            .card {
+                margin: 0 5px;
+            }
+            .container {
+                padding: 0 !important;
+            }
+            .bg-light.p-3 {
+                font-size: 0.95rem;
+                padding: 1rem !important;
+            }
+        }
+        @media (max-width: 575.98px) {
+            .header-img {
+                width: 48px;
+                height: 48px;
+            }
+            .card {
+                margin: 0 2px;
+            }
+            .bg-light.p-3 {
+                  font-size: 0.9rem;
+                padding: 0.75rem !important;
+            }
+        }
+
+
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">AI Career Tools</a>
+            <div>
+                <a class="btn btn-outline-primary me-2" href="{% url 'home' %}">HOME</a>
+                
+
+                
+                <a class="btn btn-outline-success" href="{% url 'resume_generator' %}">Resume</a>
+                <a class="btn btn-outline-info" href="{% url 'portfolio_builder' %}">Portfolio</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-10 col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="text-center">
+                            <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt="AI Cover Letter" class="header-img mb-2">
+                            <h2 class="mb-2">Generate Your Cover Letter</h2>
+                            <p class="text-muted mb-4">Let AI help you create a professional cover letter in seconds.</p>
+                        </div>
+                         <form id="coverLetterForm" method="post" novalidate>
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            <button id="generateBtn" type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center position-relative" style="overflow:hidden;">
+                                <span id="btnText"><i class="fa-solid fa-magic-wand-sparkles me-2"></i>Generate</span>
+                                <span id="btnSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;" role="status" aria-hidden="true"></span>
+                            </button>
+                        </form>
+                        <button class="btn btn-outline-secondary w-100 mt-3" type="button" data-bs-toggle="collapse" data-bs-target="#savedCoverLetters" aria-expanded="false" aria-controls="savedCoverLetters">
+                            <i class="fa-solid fa-folder-open me-2"></i>Check Saved Cover Letters
+                        </button>
+                        <div class="collapse mt-3" id="savedCoverLetters">
+                            <div class="card card-body">
+                                <div class="mb-3">
+                                    <input type="text" id="searchJobTitle" class="form-control" placeholder="Search by Job Title...">
+                                </div>
+                                <ul class="list-group" id="coverLetterList" style="display:none;">
+                                    {% if saved_cover_letters|length > 5 %}
+                                        <div class="alert alert-info mb-3">
+                                            <strong>Note:</strong> You have saved {{ saved_cover_letters|length }} cover letters. You can view the most recent ones here.
+                                        </div>
+                                    {% endif %}
+                                    {% for letter in saved_cover_letters %}
+                                        <li class="list-group-item mb-2">
+                                            <strong>{{ letter.name }}</strong> - <span class="job-title">{{ letter.job }}</span> at {{ letter.company }}<br>
+                                            <small class="text-muted">{{ letter.created_at|date:"M d, Y H:i" }}</small>
+                                            <small><strong>Skills:</strong> {{ letter.skills }}</small><br>
+                                            <pre class="bg-light p-2 rounded mt-2 saved-letter-content" id="savedLetterContent{{ letter.id }}">{{ letter.generated_letter }}</pre>
+                                            <button class="btn btn-outline-danger btn-sm mt-2 download-saved-pdf" data-letter-id="{{ letter.id }}">
+                                                <i class="fa-solid fa-file-pdf"></i> Save as PDF
+                                            </button>
+
+
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <div id="noResultsMsg" class="text-muted" style="display:none;">No saved cover letters found for this job title.</div>
+                            </div>
+                        </div>
+
+                        {% if autofill.name %}
+                            <div class="alert alert-info mt-4">
+                                <strong>Name:</strong> {{ autofill.name }}<br>
+                                <strong>Job Title:</strong> {{ autofill.job_title }}<br>
+                                <strong>Company:</strong> {{ autofill.company_name }}<br>
+                                <strong>Skills:</strong> {{ autofill.your_skills }}
+                            </div>
+                        {% endif %}
+                        {% if cover_letter %}
+                            <div id="coverLetterResult" class="mt-5 fade-in show">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h4>Your AI-Generated Cover Letter:</h4>
+                                    <button id="downloadPdfBtn" class="btn btn-outline-danger btn-sm pdf-btn" title="Download as PDF">
+                                        <i class="fa-solid fa-file-pdf"></i> PDF
+                                    </button>
+                                </div>
+                                <pre id="coverLetterText" class="bg-light p-3 rounded">{{ cover_letter }}</pre>
+                            </div>
+                        {% else %}
+                            <div id="coverLetterResult" class="mt-5 fade-in"></div>
+                        {% endif %}
+                        <div class="text-center mt-4">
+                            <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=400&q=80" alt="Writing" class="img-fluid rounded shadow" style="max-width: 60%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jsPDF CDN for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+       <script>
+        // Simple client-side validation
+        document.getElementById('coverLetterForm').addEventListener('submit', function(e) {
+            let valid = true;
+            const inputs = this.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                if (input.hasAttribute('required') && !input.value.trim()) {
+                    input.classList.add('is-invalid');
+                    valid = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+            if (!valid) {
+                e.preventDefault();
+            } else {
+                // Show spinner and disable button for feedback
+                const btn = document.getElementById('generateBtn');
+                const btnText = document.getElementById('btnText');
+                const btnSpinner = document.getElementById('btnSpinner');
+                btn.disabled = true;
+                btnText.textContent = "Generating...";
+                btnSpinner.style.display = "inline-block";
+            }
+        });
+
+        // Fade-in animation for result
+        window.addEventListener('DOMContentLoaded', function() {
+            const result = document.getElementById('coverLetterResult');
+            if (result && result.textContent.trim().length > 0) {
+                setTimeout(() => result.classList.add('show'), 100);
+            }
+        });
+
+        // PDF download functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const pdfBtn = document.getElementById('downloadPdfBtn');
+            if (pdfBtn) {
+                pdfBtn.addEventListener('click', function() {
+                    const { jsPDF } = window.jspdf;
+                    const text = document.getElementById('coverLetterText').innerText;
+                    const doc = new jsPDF();
+                    const lines = doc.splitTextToSize(text, 180);
+                    doc.setFont('times', 'normal');
+                    doc.setFontSize(12);
+                    doc.text(lines, 15, 20);
+                    doc.save('cover_letter.pdf');
+                });
+            }
+        });
+
+       
+       document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchJobTitle');
+        const coverLetterList = document.getElementById('coverLetterList');
+        const noResultsMsg = document.getElementById('noResultsMsg');
+        let searchPerformed = false;
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const filter = this.value.toLowerCase();
+                const items = document.querySelectorAll('#coverLetterList .list-group-item');
+                let anyVisible = false;
+                searchPerformed = true;
+
+                items.forEach(item => {
+                    const jobTitleElem = item.querySelector('.job-title');
+                    const jobTitle = jobTitleElem ? jobTitleElem.textContent.toLowerCase() : '';
+                    if (jobTitle.includes(filter) && filter.length > 0) {
+                        item.style.display = '';
+                        anyVisible = true;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                // Show the list only if search is performed
+                if (filter.length > 0) {
+                    coverLetterList.style.display = '';
+                    noResultsMsg.style.display = anyVisible ? 'none' : '';
+                } else {
+                    coverLetterList.style.display = 'none';
+                    noResultsMsg.style.display = 'none';
+                }
+            });
+
+            // Hide the list initially
+            coverLetterList.style.display = 'none';
+            noResultsMsg.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.download-saved-pdf').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const letterId = this.getAttribute('data-letter-id');
+                const contentElem = document.getElementById('savedLetterContent' + letterId);
+                if (contentElem) {
+                    const { jsPDF } = window.jspdf;
+                    const text = contentElem.innerText;
+                    const doc = new jsPDF();
+                    const lines = doc.splitTextToSize(text, 180);
+                    doc.setFont('times', 'normal');
+                    doc.setFontSize(12);
+                    doc.text(lines, 15, 20);
+                    doc.save('cover_letter_' + letterId + '.pdf');
+                }
+            });
+        });
+    });
+
+    
+    </script>
