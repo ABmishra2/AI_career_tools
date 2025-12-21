@@ -97,5 +97,5 @@ Support custom design themes
 
 🧑‍💻 Author
 
-Ardhendu Bhushan Mishra
+Aparna Pandey
 Full-Stack Developer | AI & Django Enthusiast
